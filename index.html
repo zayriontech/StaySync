@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zayrion Tech | Enterprise Management System</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        :root {
+            --brand-primary: #600000;
+            --brand-dark: #0b0b0b;
+            --brand-surface: #0a0a0a;
+            --safe-green: #10b981;
+            --warn-yellow: #f59e0b;
+            --danger-red: #ef4444;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.08);
+            --sidebar-width: 280px;
+            --radius-xl: 30px;
+            --radius-lg: 20px;
+        }
+
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        * { 
+            margin: 0; padding: 0; box-sizing: border-box; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body { 
+            background: var(--light-bg); 
+            height: 100vh; 
+            color: #1e293b; 
+            overflow: hidden;
+        }
+
+        /* --- SPLASH & AUTH --- */
+        #splash { 
+            position: fixed; inset: 0; z-index: 10000; background: #000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; 
+            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1); 
+        }
+        #auth-container { 
+        position: fixed; 
+        inset: 0; 
+        z-index: 9999; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        background: var(--brand-dark); 
+        color: white; 
+        padding: 24px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+        .auth-card { 
+        width: 100%; 
+        max-width: 380px; 
+        text-align: center;
+        background: rgba(255,255,255,0.03);
+        padding: 40px 30px;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+    }
+      
+      .app-logo-img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+    }
+
+    .auth-input-group { 
+        margin-bottom: 20px; 
+        text-align: left; 
+    }
+
+    .auth-input-group label { 
+        display: block; 
+        font-size: 11px; 
+        font-weight: 800; 
+        color: rgba(255,255,255,0.4); 
+        margin-bottom: 8px; 
+        margin-left: 5px; 
+        text-transform: uppercase; 
+    }
+
+    .auth-input { 
+        width: 100%; 
+        padding: 18px; 
+        border-radius: 16px; 
+        border: 1px solid rgba(255,255,255,0.1); 
+        background: rgba(255,255,255,0.05); 
+        color: white; 
+        font-weight: 600; 
+        outline: none; 
+        transition: 0.3s;
+    }
+
+    .auth-input:focus { 
+        border-color: var(--brand-primary); 
+        background: rgba(255,255,255,0.1); 
+    }
+
+    .btn-login { 
+        width: 100%; 
+        padding: 18px; 
+        border-radius: 16px; 
+        border: none; 
+        background: var(--brand-primary); 
+        color: white; 
+        font-weight: 800; 
+        cursor: pointer; 
+        transition: 0.3s; 
+        margin-top: 10px;
+        letter-spacing: 1px;
+    }
+
+    .btn-login:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 10px 20px rgba(74,0,0,0.4); 
+    }
+
+        /* --- MAIN APP --- */
+        #main-app { display: none; height: 100vh; width: 100vw; }
+        
+        aside {
+            display: none; width: var(--sidebar-width); background: #fff;
+            border-right: 1px solid #e2e8f0; flex-direction: column;
+            padding: 40px 25px; height: 100%; z-index: 50;
+        }
+        .brand-section { display: flex; align-items: center; gap: 15px; margin-bottom: 50px; }
+        .brand-icon { width: 45px; height: 45px; background: #000; border-radius: 14px; overflow: hidden; }
+        .app-logo-img { width: 100%; height: 100%; object-fit: cover; }
+
+        .nav-link { 
+            display: flex; align-items: center; gap: 12px; padding: 16px 20px; 
+            border-radius: 18px; color: #64748b; font-weight: 700; 
+            cursor: pointer; transition: 0.3s; margin-bottom: 5px;
+        }
+        .nav-link.active { background: var(--brand-dark); color: white; }
+
+        .content-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* HEADER */
+        .header-bar {
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(15px);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .desktop-header { display: none; padding: 20px 40px; }
+        .desktop-controls { display: flex; gap: 12px; flex: 1; max-width: 900px; margin-right: 30px; }
+
+        .mobile-header { border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; padding: 20px; }
+
+        .input-dark {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 12px 18px; border-radius: 14px;
+            outline: none; font-size: 14px; transition: 0.3s;
+        }
+        .input-dark:focus { border-color: #ff4d4d; background: rgba(255,255,255,0.12); }
+
+        /* VIEWPORT */
+        .view-port { flex: 1; overflow-y: auto; padding: 25px; padding-bottom: 120px; }
+        
+        .stat-grid { display: flex; gap: 15px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
+        .stat-card { 
+            background: white; padding: 20px; border-radius: 24px; min-width: 140px; flex: 1;
+            box-shadow: var(--card-shadow); border: 1px solid #fff;
+        }
+        .stat-label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 28px; font-weight: 800; color: #0f172a; display: block; margin-top: 5px; }
+
+        /* CARDS */
+        .task-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .task-card {
+            background: white; border-radius: 24px; padding: 24px;
+            box-shadow: var(--card-shadow); position: relative;
+            animation: slideUp 0.4s ease-out;
+        }
+        .task-card.overtime { border: 2px solid var(--danger-red); background: #fffafb; }
+
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .room-badge { background: #000; color: white; padding: 6px 12px; border-radius: 10px; font-size: 10px; font-weight: 800; }
+        
+        .timer-val { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+        .timer-label { font-size: 9px; opacity: 0.5; text-align: right; text-transform: uppercase; font-weight: 700; }
+
+        .progress-container { height: 6px; background: #f1f5f9; border-radius: 10px; margin: 15px 0; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+
+        .btn-finish { background: #000; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 11px; cursor: pointer; }
+        
+        /* FOOTER NAV */
+        .mobile-nav { 
+            position: fixed; bottom: 20px; left: 20px; right: 20px; height: 70px; 
+            background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(15px);
+            display: flex; justify-content: space-around; align-items: center; 
+            border-radius: 22px; z-index: 100; box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .m-nav-item { color: rgba(255,255,255,0.3); display: flex; flex-direction: column; align-items: center; gap: 4px; border:none; background:none; cursor:pointer;}
+        .m-nav-item.active { color: #fff; }
+        .m-nav-item span { font-size: 9px; font-weight: 700; text-transform: uppercase; }
+
+        #mobile-task-modal {
+            position: fixed; bottom: -100%; left: 0; right: 0;
+            background: #fff; z-index: 200; padding: 30px 25px 50px;
+            border-top-left-radius: 35px; border-top-right-radius: 35px;
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.2);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #mobile-task-modal.active { bottom: 0; }
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 199; display: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #800000, #4a0000);
+            color: white; border: none; padding: 14px 24px;
+            border-radius: 16px; font-weight: 800; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1px; font-size: 12px;
+        }
+
+        .audit-info {
+            font-size: 10px; color: #64748b; font-weight: 700;
+            display: flex; flex-direction: column; gap: 3px; margin-top: 10px;
+        }
+        .timestamp-box { color: #000; font-weight: 800; font-size: 11px; }
+
+        @media (min-width: 1024px) {
+            #main-app { flex-direction: row; }
+            aside { display: flex; }
+            .desktop-header { display: flex; }
+            .mobile-header, .mobile-nav { display: none !important; }
+            .task-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <div style="width: 100px; height: 100px; background: #fff; border-radius: 25px; margin-bottom: 20px; overflow: hidden;">
+            <img src="https://res.cloudinary.com/dweal4q39/image/upload/v1777013514/Zayrion_seplh8.jpg" alt="Logo" class="app-logo-img">
+        </div>
+        <h1 style="letter-spacing: 8px; font-weight: 800; font-size: 20px;">ZAYRION</h1>
+    </div>
+
+    <div id="auth-container">
+    <div class="auth-card">
+        <!-- Logo Section -->
+        <div class="logo-box-large">
+            <img src="https://res.cloudinary.com/dweal4q39/image/upload/v1777013514/Zayrion_seplh8.jpg" alt="Logo" class="app-logo-img">
+        </div>
+
+        <!-- Heading -->
+        <h2 style="margin-bottom: 5px; letter-spacing: 1px;">Akses Admin</h2>
+        <p style="font-size: 12px; opacity: 0.5; margin-bottom: 35px;">Zayrion StaySync</p>
+        
+        <!-- Form Inputs -->
+        <div class="auth-input-group">
+            <label>Identitas Admin</label>
+            <input type="text" id="userInput" class="auth-input" placeholder="Masukkan ID Admin">
+        </div>
+        
+        <div class="auth-input-group">
+            <label>Kunci Keamanan</label>
+            <input type="password" id="passInput" class="auth-input" placeholder="••••••••">
+        </div>
+
+        <!-- Action Button -->
+        <button class="btn-login" onclick="login()">LOGIN</button>
+    </div>
+</div>
+
+    <div id="main-app">
+        <aside>
+            <div class="brand-section">
+                <div class="brand-icon">
+                    <img src="https://res.cloudinary.com/dweal4q39/image/upload/v1777013514/Zayrion_seplh8.jpg" alt="Logo" class="app-logo-img">
+                </div>
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 800;">Zayrion</h2>
+                    <p style="font-size: 9px; font-weight: 800; color: #800000; letter-spacing: 1px;">SYSTEMS</p>
+                </div>
+            </div>
+            <div style="flex: 1;">
+                <div class="nav-link active" onclick="setView('dashboard')"><i data-lucide="layout-grid"></i> Dashboard</div>
+                <div class="nav-link" onclick="setView('history')"><i data-lucide="clock"></i> History</div>
+            </div>
+            <div style="padding: 20px; background: #f8fafc; border-radius: 20px;">
+                <p id="user-display-name" style="font-weight: 800; font-size: 14px;">GUEST</p>
+                <button onclick="logout()" style="border: none; background: none; color: #ef4444; font-size: 11px; font-weight: 800; margin-top: 5px; cursor: pointer;">LOGOUT</button>
+            </div>
+        </aside>
+
+        <div class="content-container">
+            <header class="header-bar desktop-header">
+                <div class="desktop-controls">
+                    <input type="number" id="d-room" class="input-dark" placeholder="RM #" style="width: 80px;">
+                    <input type="text" id="d-task" class="input-dark" placeholder="Task description..." style="flex: 1;">
+                    <input type="number" id="d-limit" class="input-dark" placeholder="Min" style="width: 80px;">
+                    <button class="btn-primary" onclick="createTask('d')">ADD TASK</button>
+                </div>
+                <div id="d-clock" style="font-weight: 800; font-size: 18px; letter-spacing: 1px;">00:00:00</div>
+            </header>
+
+            <header class="header-bar mobile-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 35px; height: 35px; background: #fff; border-radius: 10px; overflow: hidden;">
+                        <img src="https://res.cloudinary.com/dweal4q39/image/upload/v1777013514/Zayrion_seplh8.jpg" alt="Logo" class="app-logo-img">
+                    </div>
+                    <span id="m-user-display" style="font-weight: 800; font-size: 14px;">ADMIN</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="m-clock" style="font-weight: 800; font-size: 14px; opacity: 0.8;">00:00</div>
+                    <div style="background: rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 12px; font-weight: 800; font-size: 12px;" onclick="toggleModal(true)">+ NEW</div>
+                </div>
+            </header>
+
+            <div id="view-dashboard" class="view-port">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Running</span>
+                        <span class="stat-value" id="count-run">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Vaulted</span>
+                        <span class="stat-value" id="count-done" style="color: var(--safe-green)">0</span>
+                    </div>
+                </div>
+                <h3 style="font-size: 11px; font-weight: 800; color: #94a3b8; margin-bottom: 15px; letter-spacing: 1px;">ACTIVE WORKFLOWS</h3>
+                <div id="container-running" class="task-grid"></div>
+            </div>
+
+            <div id="view-history" class="view-port" style="display: none;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 1px;">VAULT AUDIT LOG</h3>
+        
+        <div style="display: flex; gap: 10px;">
+            <button onclick="exportToCSV()" style="background: #f1f5f9; border: none; padding: 8px 12px; border-radius: 10px; font-size: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="download" size="14"></i> EXPORT
+            </button>
+            <button onclick="clearVault()" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 8px 12px; border-radius: 10px; font-size: 10px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <i data-lucide="trash-2" size="14"></i> CLEAR VAULT
+            </button>
+        </div>
+    </div>
+    <div id="container-done" class="task-grid"></div>
+</div>
+
+        <div class="modal-overlay" id="modal-overlay" onclick="toggleModal(false)"></div>
+        <div id="mobile-task-modal">
+            <h2 style="font-weight: 800; font-size: 20px; margin-bottom: 20px;">Start Request</h2>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="number" id="m-room" class="input-dark" style="background: #f1f5f9; color: #000;" placeholder="Room #">
+                <input type="text" id="m-task" class="input-dark" style="background: #f1f5f9; color: #000;" placeholder="Description">
+                <input type="number" id="m-limit" class="input-dark" style="background: #f1f5f9; color: #000;" placeholder="Duration (min)">
+                <button class="btn-primary" style="padding: 18px;" onclick="createTask('m')">DEPLOY</button>
+            </div>
+        </div>
+
+        <nav class="mobile-nav">
+    <button class="m-nav-item active" onclick="setView('dashboard')">
+        <i data-lucide="zap"></i><span>Monitor</span>
+    </button>
+    <button class="m-nav-item" onclick="setView('history')">
+        <i data-lucide="shield-check"></i><span>Vault</span>
+    </button>
+    <button class="m-nav-item" onclick="logout()" style="color: rgba(239, 68, 68, 0.6);">
+        <i data-lucide="log-out"></i><span>Logout</span>
+    </button>
+</nav>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6CcmmzHfRDhDvOyMM6o50bBBxk3lJvMU",
+            authDomain: "timer-8f55b.firebaseapp.com",
+            databaseURL: "https://timer-8f55b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "timer-8f55b",
+            storageBucket: "timer-8f55b.firebasestorage.app",
+            appId: "1:722001338217:web:2cbc1071d08bab767627f8"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        const tasksRef = ref(db, 'tasks');
+
+        let activeAdmin = "";
+        let currentTasks = {};
+
+        window.toggleModal = (s) => {
+            document.getElementById('mobile-task-modal').classList.toggle('active', s);
+            document.getElementById('modal-overlay').style.display = s ? 'block' : 'none';
+        };
+
+        window.setView = (v) => {
+            document.getElementById('view-dashboard').style.display = v === 'dashboard' ? 'block' : 'none';
+            document.getElementById('view-history').style.display = v === 'history' ? 'block' : 'none';
+            document.querySelectorAll('.nav-link, .m-nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`[onclick="setView('${v}')"]`).forEach(t => t.classList.add('active'));
+        };
+
+        onAuthStateChanged(auth, (u) => {
+            if (u) {
+                activeAdmin = u.email.split('@')[0].toUpperCase();
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                document.getElementById('user-display-name').innerText = activeAdmin;
+                document.getElementById('m-user-display').innerText = activeAdmin;
+            } else {
+                document.getElementById('auth-container').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
+            }
+        });
+
+        window.login = () => {
+            const u = document.getElementById('userInput').value;
+            const p = document.getElementById('passInput').value;
+            if (u && p) signInWithEmailAndPassword(auth, `${u.toLowerCase()}@team.com`, p).catch(() => alert("Access Denied"));
+        };
+
+        window.logout = () => signOut(auth);
+
+        window.createTask = (pre) => {
+            const r = document.getElementById(`${pre}-room`).value;
+            const t = document.getElementById(`${pre}-task`).value;
+            const l = document.getElementById(`${pre}-limit`).value;
+            if (!r || !t || !l) return;
+            push(tasksRef, { 
+                room: r, name: t, 
+                limitSec: parseInt(l) * 60, 
+                createdAt: Date.now(), 
+                status: 'running', 
+                createdBy: activeAdmin 
+            }).then(() => {
+                document.getElementById(`${pre}-room`).value = "";
+                document.getElementById(`${pre}-task`).value = "";
+                document.getElementById(`${pre}-limit`).value = "";
+                if(pre === 'm') toggleModal(false);
+            });
+        };
+
+        window.completeTask = (id, elapsed) => {
+            update(ref(db, `tasks/${id}`), { 
+                status: 'done', 
+                finishedAt: Date.now(), 
+                totalElapsed: elapsed,
+                finishedBy: activeAdmin 
+            });
+        };
+
+        window.deleteTask = (id) => confirm("Hapus log permanen?") && remove(ref(db, `tasks/${id}`));
+
+        const formatTime = (s) => {
+            const abs = Math.abs(s);
+            const m = Math.floor(abs / 60);
+            const sec = abs % 60;
+            return `${s < 0 ? '-' : ''}${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        };
+      
+      window.clearVault = () => {
+    const doneIds = Object.keys(currentTasks).filter(id => currentTasks[id].status === 'done');
+    
+    if (doneIds.length === 0) return alert("Vault sudah kosong.");
+    
+    if (confirm(`Hapus permanen ${doneIds.length} data history? Tindakan ini tidak bisa dibatalkan.`)) {
+        doneIds.forEach(id => {
+            remove(ref(db, `tasks/${id}`));
+        });
+    }
+};
+      
+      window.exportToCSV = () => {
+    const doneTasks = Object.values(currentTasks).filter(t => t.status === 'done');
+    
+    if (doneTasks.length === 0) return alert("Tidak ada data untuk diekspor.");
+
+    // Menggunakan Titik Koma (;) agar langsung rapi di Excel Indonesia
+    const sep = ";";
+    let csvContent = `Room${sep}Task Name${sep}Limit (Min)${sep}Time Spent${sep}Status${sep}Created By${sep}Finished By${sep}Date\n`;
+
+    doneTasks.forEach(t => {
+        const spentMin = Math.floor(t.totalElapsed / 60);
+        const limitMin = Math.floor(t.limitSec / 60);
+        const status = t.totalElapsed > t.limitSec ? "OVERTIME" : "ON TIME";
+        const date = new Date(t.finishedAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+        
+        // Membersihkan nama task dari karakter yang bisa merusak format CSV
+        const cleanName = t.name.replace(/;/g, ","); 
+
+        csvContent += `${t.room}${sep}${cleanName}${sep}${limitMin}${sep}${formatTime(t.totalElapsed)}${sep}${status}${sep}${t.createdBy}${sep}${t.finishedBy}${sep}${date}\n`;
+    });
+
+    // Menambahkan BOM (Byte Order Mark) agar Excel mengenali encoding UTF-8 (mencegah karakter aneh)
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().slice(0,10);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Zayrion_Report_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+        const formatClock = (ts) => {
+            if(!ts) return "--:--";
+            const d = new Date(ts);
+            return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+        };
+
+        onValue(tasksRef, (snap) => {
+            currentTasks = snap.val() || {};
+            syncTaskDOM();
+        });
+
+        function syncTaskDOM() {
+            const runCont = document.getElementById('container-running');
+            const doneCont = document.getElementById('container-done');
+            
+            document.querySelectorAll('.task-card').forEach(c => { if(!currentTasks[c.id]) c.remove(); });
+
+            let counts = { run: 0, done: 0 };
+
+            Object.entries(currentTasks).forEach(([id, t]) => {
+                const isRun = t.status === 'running';
+                isRun ? counts.run++ : counts.done++;
+
+                let card = document.getElementById(id);
+                if(!card) {
+                    card = document.createElement('div');
+                    card.id = id;
+                    card.className = 'task-card';
+                    const parent = isRun ? runCont : doneCont;
+                    parent.prepend(card);
+                    
+                    // Rentang Waktu Display (e.g. 19:00 - 19:30)
+                    const timeRange = isRun 
+                        ? `<span class="timestamp-box">START ${formatClock(t.createdAt)}</span>` 
+                        : `<span class="timestamp-box">${formatClock(t.createdAt)} — ${formatClock(t.finishedAt)}</span>`;
+
+                    const adminAudit = isRun 
+                        ? `BY @${t.createdBy}` 
+                        : `REQ BY @${t.createdBy} • DONE BY @${t.finishedBy || 'SYSTEM'}`;
+
+                    card.innerHTML = `
+                        <div class="card-top">
+                            <div style="flex: 1; padding-right: 15px;">
+                                <span class="room-badge">ROOM ${t.room}</span>
+                                <h4 style="margin-top: 10px; font-weight: 800; font-size: 16px; line-height: 1.2;">${t.name}</h4>
+                                <div class="audit-info" id="audit-${id}">
+                                    ${timeRange}
+                                    <span style="letter-spacing: 0.5px;">${adminAudit}</span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="timer-val" id="time-${id}">00:00</div>
+                                <div class="timer-label" id="label-${id}">${isRun ? 'REMAINING' : 'TOTAL TIME'}</div>
+                            </div>
+                        </div>
+                        <div class="progress-container"><div class="progress-fill" id="progress-${id}"></div></div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 9px; font-weight: 800; color: #94a3b8; letter-spacing: 1px;">${isRun ? 'ACTIVE STATUS' : 'AUDIT COMPLETED'}</span>
+                            <div id="action-${id}"></div>
+                        </div>
+                    `;
+                    
+                    const actionDiv = document.getElementById(`action-${id}`);
+                    if(isRun) {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-finish'; btn.innerText = 'FINISH';
+                        btn.onclick = () => {
+                            const elap = Math.floor((Date.now() - t.createdAt) / 1000);
+                            completeTask(id, elap);
+                        };
+                        actionDiv.appendChild(btn);
+                    } else {
+                        const btn = document.createElement('button');
+                        btn.style = "background: #f1f5f9; color: #ef4444; border: none; padding: 10px; border-radius: 10px; cursor:pointer;";
+                        btn.innerHTML = '<i data-lucide="trash-2" size="14"></i>';
+                        btn.onclick = () => deleteTask(id);
+                        actionDiv.appendChild(btn);
+                    }
+                    lucide.createIcons();
+                } else {
+                    const expectedParent = isRun ? runCont : doneCont;
+                    if(card.parentElement !== expectedParent) {
+                        expectedParent.prepend(card);
+                        // Refresh audit info on move
+                        const auditEl = document.getElementById(`audit-${id}`);
+                        if(auditEl) {
+                            const timeRange = isRun 
+                                ? `<span class="timestamp-box">START ${formatClock(t.createdAt)}</span>` 
+                                : `<span class="timestamp-box">${formatClock(t.createdAt)} — ${formatClock(t.finishedAt)}</span>`;
+                            const adminAudit = isRun 
+                                ? `BY @${t.createdBy}` 
+                                : `REQ BY @${t.createdBy} • DONE BY @${t.finishedBy || 'SYSTEM'}`;
+                            auditEl.innerHTML = `${timeRange}<span style="letter-spacing: 0.5px;">${adminAudit}</span>`;
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('count-run').innerText = counts.run;
+            document.getElementById('count-done').innerText = counts.done;
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            if(document.getElementById('d-clock')) document.getElementById('d-clock').innerText = now.toLocaleTimeString('id-ID', { hour12: false });
+            if(document.getElementById('m-clock')) document.getElementById('m-clock').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            /* --- FINAL UPDATE: Logika Warna & Minus untuk History --- */
+
+Object.entries(currentTasks).forEach(([id, t]) => {
+    const isRun = t.status === 'running';
+    
+    // 1. Hitung durasi pengerjaan & sisa waktu
+    // elapsed: total waktu yang sudah dihabiskan
+    const elapsed = isRun ? Math.floor((Date.now() - t.createdAt) / 1000) : t.totalElapsed;
+    // rem: sisa waktu (limit dikurangi yang sudah lewat)
+    const rem = t.limitSec - elapsed;
+    const remPerc = (rem / t.limitSec) * 100;
+    
+    // 2. Logika Warna Berdasarkan Persentase Sisa
+    let color = "#10b981"; // Hijau (Default > 50%)
+    if (remPerc <= 50 && remPerc > 20) {
+        color = "#f59e0b"; // Kuning (20% - 50%)
+    } else if (remPerc <= 20) {
+        color = "#ef4444"; // Merah (< 20% atau Minus)
+    }
+
+    const timeEl = document.getElementById(`time-${id}`);
+    const progEl = document.getElementById(`progress-${id}`);
+    const cardEl = document.getElementById(id);
+    const labelEl = document.getElementById(`label-${id}`);
+    
+    if(timeEl) { 
+        if (isRun) {
+            // Saat berjalan: Tampilkan sisa waktu (akan otomatis minus jika rem < 0)
+            timeEl.innerText = formatTime(rem);
+        } else {
+            // SAAT DI VAULT/HISTORY:
+            // Jika rem < 0 (Overtime), tampilkan selisih minusnya (misal: -02:30)
+            // Jika rem >= 0 (Tepat waktu), tampilkan total durasi pengerjaan
+            timeEl.innerText = rem < 0 ? formatTime(rem) : formatTime(elapsed);
+        }
+        timeEl.style.color = color; 
+    }
+    
+    if(progEl) { 
+        // Bar di history tetap penuh (100%) dengan warna kondisi terakhir
+        progEl.style.width = isRun ? Math.max(0, remPerc) + '%' : '100%'; 
+        progEl.style.backgroundColor = color; 
+    }
+    
+    if(cardEl) {
+        if(isRun) {
+            cardEl.classList.toggle('overtime', rem < 0);
+            if(labelEl) labelEl.innerText = rem < 0 ? 'OVERTIME' : 'REMAINING';
+        } else {
+            // UI untuk Task yang sudah selesai
+            if(labelEl) {
+                labelEl.innerText = rem < 0 ? 'OVERTIME DONE' : 'TOTAL TIME';
+                labelEl.style.color = rem < 0 ? '#ef4444' : '#94a3b8';
+            }
+            // Memberi border merah tipis pada kartu di history jika pengerjaan telat
+            cardEl.style.border = rem < 0 ? '1.5px solid rgba(239, 68, 68, 0.3)' : '1px solid #e2e8f0';
+        }
+    }
+});
+        }, 1000);
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const s = document.getElementById('splash');
+                if(s) s.style.transform = 'translateY(-100%)';
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
