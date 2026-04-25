@@ -391,13 +391,16 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyC6CcmmzHfRDhDvOyMM6o50bBBxk3lJvMU",
-            authDomain: "timer-8f55b.firebaseapp.com",
-            databaseURL: "https://timer-8f55b-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "timer-8f55b",
-            storageBucket: "timer-8f55b.firebasestorage.app",
-            appId: "1:722001338217:web:2cbc1071d08bab767627f8"
-        };
+            const firebaseConfig = {
+  apiKey: "AIzaSyC6CcmmzHfRDhDvOyMM6o50bBBxk3lJvMU",
+  authDomain: "timer-8f55b.firebaseapp.com",
+  databaseURL: "https://timer-8f55b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "timer-8f55b",
+  storageBucket: "timer-8f55b.firebasestorage.app",
+  messagingSenderId: "722001338217",
+  appId: "1:722001338217:web:2cbc1071d08bab767627f8",
+  measurementId: "G-24ZYESDR81"
+};
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
