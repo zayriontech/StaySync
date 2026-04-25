@@ -387,7 +387,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = {
@@ -440,23 +440,41 @@
 
         window.logout = () => signOut(auth);
 
-        window.createTask = (pre) => {
+        window.createTask = async (pre) => {
             const r = document.getElementById(`${pre}-room`).value;
             const t = document.getElementById(`${pre}-task`).value;
             const l = document.getElementById(`${pre}-limit`).value;
             if (!r || !t || !l) return;
-            push(tasksRef, { 
-                room: r, name: t, 
-                limitSec: parseInt(l) * 60, 
-                createdAt: Date.now(), 
-                status: 'running', 
-                createdBy: activeAdmin 
-            }).then(() => {
+            const newTask = {
+                room: r, name: t,
+                limitSec: parseInt(l) * 60,
+                createdAt: Date.now(),
+                status: 'running',
+                createdBy: activeAdmin
+            };
+            try {
+                // Optimistic UI: tampilkan task dulu agar terasa instan.
+                const newTaskRef = push(tasksRef);
+                currentTasks[newTaskRef.key] = newTask;
+                syncTaskDOM();
+                await set(newTaskRef, newTask);
                 document.getElementById(`${pre}-room`).value = "";
                 document.getElementById(`${pre}-task`).value = "";
                 document.getElementById(`${pre}-limit`).value = "";
                 if(pre === 'm') toggleModal(false);
-            });
+            } catch (err) {
+                // Rollback optimistic item jika write gagal.
+                const failedTaskId = Object.keys(currentTasks).find((id) => {
+                    const x = currentTasks[id];
+                    return x && x.createdAt === newTask.createdAt && x.room === newTask.room && x.name === newTask.name;
+                });
+                if (failedTaskId) {
+                    delete currentTasks[failedTaskId];
+                    syncTaskDOM();
+                }
+                console.error("Gagal menyimpan task ke Firebase:", err);
+                alert("Gagal menyimpan data ke database. Cek aturan Firebase Database (rules) dan koneksi internet.");
+            }
         };
 
         window.completeTask = (id, elapsed) => {
@@ -531,10 +549,61 @@
             return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
         };
 
-        onValue(tasksRef, (snap) => {
-            currentTasks = snap.val() || {};
-            syncTaskDOM();
-        });
+        function renderTaskStatus(id, t) {
+            const isRun = t.status === 'running';
+            const elapsed = isRun ? Math.floor((Date.now() - t.createdAt) / 1000) : t.totalElapsed;
+            const rem = t.limitSec - elapsed;
+            const remPerc = (rem / t.limitSec) * 100;
+
+            let color = "#10b981";
+            if (remPerc <= 50 && remPerc > 20) color = "#f59e0b";
+            else if (remPerc <= 20) color = "#ef4444";
+
+            const timeEl = document.getElementById(`time-${id}`);
+            const progEl = document.getElementById(`progress-${id}`);
+            const cardEl = document.getElementById(id);
+            const labelEl = document.getElementById(`label-${id}`);
+
+            if (timeEl) {
+                if (isRun) timeEl.innerText = formatTime(rem);
+                else timeEl.innerText = rem < 0 ? formatTime(rem) : formatTime(elapsed);
+                timeEl.style.color = color;
+            }
+
+            if (progEl) {
+                progEl.style.width = isRun ? Math.max(0, remPerc) + '%' : '100%';
+                progEl.style.backgroundColor = color;
+            }
+
+            if (cardEl) {
+                if (isRun) {
+                    cardEl.classList.toggle('overtime', rem < 0);
+                    if (labelEl) labelEl.innerText = rem < 0 ? 'OVERTIME' : 'REMAINING';
+                } else {
+                    if (labelEl) {
+                        labelEl.innerText = rem < 0 ? 'OVERTIME DONE' : 'TOTAL TIME';
+                        labelEl.style.color = rem < 0 ? '#ef4444' : '#94a3b8';
+                    }
+                    cardEl.style.border = rem < 0 ? '1.5px solid rgba(239, 68, 68, 0.3)' : '1px solid #e2e8f0';
+                }
+            }
+        }
+
+        onValue(
+            tasksRef,
+            (snap) => {
+                currentTasks = snap.val() || {};
+                syncTaskDOM();
+            },
+            (err) => {
+                console.error("Gagal membaca data Firebase:", err);
+                if (err && err.code === "PERMISSION_DENIED") {
+                    alert("Akses database ditolak. Buka Firebase Realtime Database > Rules, lalu izinkan user login membaca/menulis node 'tasks'.");
+                } else {
+                    alert("Database gagal diakses. Cek konfigurasi Firebase dan koneksi internet.");
+                }
+            }
+        );
 
         function syncTaskDOM() {
             const runCont = document.getElementById('container-running');
@@ -621,6 +690,7 @@
                         }
                     }
                 }
+                renderTaskStatus(id, t);
             });
 
             document.getElementById('count-run').innerText = counts.run;
@@ -635,61 +705,8 @@
             /* --- FINAL UPDATE: Logika Warna & Minus untuk History --- */
 
 Object.entries(currentTasks).forEach(([id, t]) => {
-    const isRun = t.status === 'running';
-    
-    // 1. Hitung durasi pengerjaan & sisa waktu
-    // elapsed: total waktu yang sudah dihabiskan
-    const elapsed = isRun ? Math.floor((Date.now() - t.createdAt) / 1000) : t.totalElapsed;
-    // rem: sisa waktu (limit dikurangi yang sudah lewat)
-    const rem = t.limitSec - elapsed;
-    const remPerc = (rem / t.limitSec) * 100;
-    
-    // 2. Logika Warna Berdasarkan Persentase Sisa
-    let color = "#10b981"; // Hijau (Default > 50%)
-    if (remPerc <= 50 && remPerc > 20) {
-        color = "#f59e0b"; // Kuning (20% - 50%)
-    } else if (remPerc <= 20) {
-        color = "#ef4444"; // Merah (< 20% atau Minus)
-    }
-
-    const timeEl = document.getElementById(`time-${id}`);
-    const progEl = document.getElementById(`progress-${id}`);
-    const cardEl = document.getElementById(id);
-    const labelEl = document.getElementById(`label-${id}`);
-    
-    if(timeEl) { 
-        if (isRun) {
-            // Saat berjalan: Tampilkan sisa waktu (akan otomatis minus jika rem < 0)
-            timeEl.innerText = formatTime(rem);
-        } else {
-            // SAAT DI VAULT/HISTORY:
-            // Jika rem < 0 (Overtime), tampilkan selisih minusnya (misal: -02:30)
-            // Jika rem >= 0 (Tepat waktu), tampilkan total durasi pengerjaan
-            timeEl.innerText = rem < 0 ? formatTime(rem) : formatTime(elapsed);
-        }
-        timeEl.style.color = color; 
-    }
-    
-    if(progEl) { 
-        // Bar di history tetap penuh (100%) dengan warna kondisi terakhir
-        progEl.style.width = isRun ? Math.max(0, remPerc) + '%' : '100%'; 
-        progEl.style.backgroundColor = color; 
-    }
-    
-    if(cardEl) {
-        if(isRun) {
-            cardEl.classList.toggle('overtime', rem < 0);
-            if(labelEl) labelEl.innerText = rem < 0 ? 'OVERTIME' : 'REMAINING';
-        } else {
-            // UI untuk Task yang sudah selesai
-            if(labelEl) {
-                labelEl.innerText = rem < 0 ? 'OVERTIME DONE' : 'TOTAL TIME';
-                labelEl.style.color = rem < 0 ? '#ef4444' : '#94a3b8';
-            }
-            // Memberi border merah tipis pada kartu di history jika pengerjaan telat
-            cardEl.style.border = rem < 0 ? '1.5px solid rgba(239, 68, 68, 0.3)' : '1px solid #e2e8f0';
-        }
-    }
+    if (t.status !== 'running') return;
+    renderTaskStatus(id, t);
 });
         }, 1000);
 
