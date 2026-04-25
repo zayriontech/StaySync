@@ -410,20 +410,7 @@
         let activeAdmin = "";
         let globalTasks = {};
 
-        // --- AUTH LOGIC ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                activeAdmin = user.email.split('@')[0].toUpperCase();
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('main-app').style.display = 'flex';
-                document.getElementById('user-display-name').innerText = activeAdmin;
-                document.getElementById('m-user-display').innerText = activeAdmin;
-                document.getElementById('avatar-init').innerText = activeAdmin.charAt(0);
-            } else {
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('main-app').style.display = 'none';
-            }
-        });
+        
         
         window.toggleModal = (s) => {
             document.getElementById('mobile-task-modal').classList.toggle('active', s);
