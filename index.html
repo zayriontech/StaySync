@@ -396,22 +396,17 @@
             databaseURL: "https://timer-8f55b-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "timer-8f55b",
             storageBucket: "timer-8f55b.firebasestorage.app",
-            messagingSenderId: "722001338217",
             appId: "1:722001338217:web:2cbc1071d08bab767627f8"
         };
 
-        let app;
-        try { app = initializeApp(firebaseConfig); } catch(e) { app = initializeApp(firebaseConfig, "SECONDARY"); }
-        
+        const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
         const tasksRef = ref(db, 'tasks');
 
         let activeAdmin = "";
-        let globalTasks = {};
+        let currentTasks = {};
 
-        
-        
         window.toggleModal = (s) => {
             document.getElementById('mobile-task-modal').classList.toggle('active', s);
             document.getElementById('modal-overlay').style.display = s ? 'block' : 'none';
