@@ -406,6 +406,7 @@
 
         let activeAdmin = "";
         let currentTasks = {};
+        let stopTasksListener = null;
 
         window.toggleModal = (s) => {
             document.getElementById('mobile-task-modal').classList.toggle('active', s);
@@ -419,6 +420,34 @@
             document.querySelectorAll(`[onclick="setView('${v}')"]`).forEach(t => t.classList.add('active'));
         };
 
+        function subscribeTasks() {
+            if (stopTasksListener) return;
+            stopTasksListener = onValue(
+                tasksRef,
+                (snap) => {
+                    currentTasks = snap.val() || {};
+                    syncTaskDOM();
+                },
+                (err) => {
+                    console.error("Gagal membaca data Firebase:", err);
+                    if (err && err.code === "PERMISSION_DENIED") {
+                        alert("Akses database ditolak. Buka Firebase Realtime Database > Rules, lalu izinkan user login membaca/menulis node 'tasks'.");
+                    } else {
+                        alert("Database gagal diakses. Cek konfigurasi Firebase dan koneksi internet.");
+                    }
+                }
+            );
+        }
+
+        function unsubscribeTasks() {
+            if (stopTasksListener) {
+                stopTasksListener();
+                stopTasksListener = null;
+            }
+            currentTasks = {};
+            syncTaskDOM();
+        }
+
         onAuthStateChanged(auth, (u) => {
             if (u) {
                 activeAdmin = u.email.split('@')[0].toUpperCase();
@@ -426,9 +455,12 @@
                 document.getElementById('main-app').style.display = 'flex';
                 document.getElementById('user-display-name').innerText = activeAdmin;
                 document.getElementById('m-user-display').innerText = activeAdmin;
+                subscribeTasks();
             } else {
+                activeAdmin = "";
                 document.getElementById('auth-container').style.display = 'flex';
                 document.getElementById('main-app').style.display = 'none';
+                unsubscribeTasks();
             }
         });
 
@@ -588,22 +620,6 @@
                 }
             }
         }
-
-        onValue(
-            tasksRef,
-            (snap) => {
-                currentTasks = snap.val() || {};
-                syncTaskDOM();
-            },
-            (err) => {
-                console.error("Gagal membaca data Firebase:", err);
-                if (err && err.code === "PERMISSION_DENIED") {
-                    alert("Akses database ditolak. Buka Firebase Realtime Database > Rules, lalu izinkan user login membaca/menulis node 'tasks'.");
-                } else {
-                    alert("Database gagal diakses. Cek konfigurasi Firebase dan koneksi internet.");
-                }
-            }
-        );
 
         function syncTaskDOM() {
             const runCont = document.getElementById('container-running');
